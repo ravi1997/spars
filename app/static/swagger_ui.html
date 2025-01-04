@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.0.1/swagger-ui.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.0.1/swagger-ui-bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.0.1/swagger-ui-standalone-preset.js"></script>
+</head>
+
+<body>
+    <div id="swagger-ui"></div>
+
+    <button id="batchTestBtn">Run Batch Test</button>
+
+    <script>
+        // Initialize Swagger UI
+        const ui = SwaggerUIBundle({
+            url: "/swagger.json",  // Update with your Swagger spec file
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIBundle.SwaggerUIStandalonePreset
+            ],
+            layout: "BaseLayout",
+        });
+
+        // Use a function to trigger batch testing after Swagger UI is initialized
+        window.onload = function () {
+            document.getElementById('batchTestBtn').addEventListener('click', function () {
+                try {
+                    // Example of making a batch request using fetch
+                    const requests = [
+                        fetch('/your/api/endpoint1', { method: 'GET' }),
+                        fetch('/your/api/endpoint2', { method: 'GET' }),
+                        fetch('/your/api/endpoint3', { method: 'GET' })
+                    ];
+
+                    // Wait for all requests to finish
+                    Promise.all(requests)
+                        .then(responses => {
+                            return Promise.all(responses.map(response => response.json()));  // Convert responses to JSON
+                        })
+                        .then(data => {
+                            console.log('Batch test responses:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error during batch test:', error);
+                        });
+                } catch (e) {
+                    console.error('Error in batch test logic:', e);
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>
