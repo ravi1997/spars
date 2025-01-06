@@ -43,12 +43,15 @@ class QuestionSchema(ma.SQLAlchemyAutoSchema):
         model = Question
         include_fk = True
         load_instance = True
+        exclude = ('answers',)  # Exclude the answers field to prevent circular references
 
     survey = ma.Nested(SurveySchema, exclude=('questions',))  # Prevent circular reference
     options = ma.Nested('OptionSchema', many=True)  # Include related options
     constraints = ma.Nested('QuestionConstraintSchema', many=True)  # Include related constraints
     parent_question = ma.Nested('QuestionSchema', exclude=('parent_question', 'parent_option', 'survey'))  # Self-referencing
     parent_option = ma.Nested('OptionSchema', exclude=('question',))  # Prevent circular reference
+
+
 
 # Option Schema
 class OptionSchema(ma.SQLAlchemyAutoSchema):
@@ -77,7 +80,8 @@ class AnswerSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
 
     survey = ma.Nested(SurveySchema, exclude=('answers',))  # Prevent circular reference
-    question = ma.Nested(QuestionSchema, exclude=('answers',))  # Prevent circular reference
+    question = ma.Nested(QuestionSchema, exclude=('answers',))  # Exclude answers to prevent circular reference
+
 
 # Schema Instances
 user_schema = UserSchema()

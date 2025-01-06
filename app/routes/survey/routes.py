@@ -7,7 +7,7 @@ from app.decorator import token_required, verify_superadmin
 from app.model import db, Survey, Question, Option, Answer, QuestionConstraint, Role, User, SurveyAttempt
 import datetime
 from . import survey_ns
-from app.schemas import surveys_schema
+from app.schemas import surveys_schema,survey_schema,answers_schema
 
 # Swagger Models
 # Swagger Models with Complex Default Values
@@ -53,8 +53,15 @@ survey_model = survey_ns.model('Survey', {
 answer_model = survey_ns.model('Answer', {
     'question_id': fields.Integer(required=True, description='Question ID', default=1),
     'answer_text': fields.String(description='Answer text', default="Python"),
-    'answer_file': fields.String(description='Path to the uploaded file (if applicable)', default=None)
+    'answer_file': fields.String(description='Path to the uploaded file (if applicable)', default=None),
+    'selected_option_id': fields.Integer(description='Selected option ID for single-choice questions', default=None)
 })
+
+answer_submission_model = survey_ns.model('AnswerSubmission', {
+    'answers': fields.List(fields.Nested(answer_model), required=True, description='List of answers to the survey questions')
+})
+
+
 
 # Utility functions
 def validate_survey_edit_permission(survey, user):
@@ -67,11 +74,11 @@ def validate_survey_edit_permission(survey, user):
 
 def validate_survey_submission_permission(survey, user):
     """Check if the user can submit answers based on the survey state and their role."""
-    if survey.state == "testing" and user.role.name != "tester":
+    if survey.status == "testing" and user.role.name != "tester":
         raise Forbidden("Only testers can submit answers for surveys in the testing phase.")
-    if survey.state == "release" and user.role.name not in ["normal", "tester"]:
+    if survey.status == "release" and user.role.name not in ["normal", "tester"]:
         raise Forbidden("Only normal or tester users can submit answers for surveys in the release phase.")
-    if survey.state == "close":
+    if survey.status == "close":
         raise Forbidden("This survey is closed and cannot accept responses.")
 
 # Resource Classes
@@ -147,7 +154,8 @@ class SingleSurveyResource(Resource):
     def get(self, survey_id):
         """Fetch a specific survey"""
         survey = Survey.query.get_or_404(survey_id)
-        return survey.to_dict(), 200
+
+        return survey_schema.dump(survey), 200
 
     @survey_ns.expect(survey_model, validate=True)
     @survey_ns.doc(
@@ -191,7 +199,7 @@ class SingleSurveyResource(Resource):
 @survey_ns.route('/<int:survey_id>/answers')
 @survey_ns.param('survey_id', 'The Survey ID')
 class SurveyAnswersResource(Resource):
-    @survey_ns.expect(answer_model, validate=True)
+    @survey_ns.expect(answer_submission_model, validate=True)
     @survey_ns.doc(
         summary="Submit answers for a survey",
         description="Submit answers for the specified survey.",
@@ -201,32 +209,48 @@ class SurveyAnswersResource(Resource):
             403: 'Forbidden'
         }
     )
-    def post(self, survey_id):
-        """Submit answers for a survey"""
+    @token_required
+    def post(self, current_user, survey_id):
+        """Submit multiple answers for different questions in a survey"""
         data = request.json
         survey = Survey.query.get_or_404(survey_id)
 
         # Validate submission permissions
-        validate_survey_submission_permission(survey, request.user)
+        validate_survey_submission_permission(survey, current_user)
 
         # Record the survey attempt
-        attempt = SurveyAttempt(user_id=request.user.id, survey_id=survey.id, attempt_date=datetime.datetime.utcnow())
+        attempt = SurveyAttempt(
+            user_id=current_user.id,
+            survey_id=survey.id,
+            attempt_date=datetime.datetime.utcnow()
+        )
         db.session.add(attempt)
-        db.session.commit()
+        db.session.flush()  # Generate `attempt.id` before adding answers
 
+        # Batch insert answers
+        answers_to_insert = []
         for answer_data in data['answers']:
-            question = Question.query.filter_by(id=answer_data['question_id'], survey_id=survey_id).first_or_404()
-            answer = Answer(
+            question = Question.query.filter_by(
+                id=answer_data['question_id'], survey_id=survey_id
+            ).first_or_404()
+            
+            answers_to_insert.append(Answer(
                 survey_id=survey.id,
                 question_id=question.id,
                 answer_text=answer_data.get('answer_text'),
                 answer_file=answer_data.get('answer_file'),
                 attempt_id=attempt.id
-            )
-            db.session.add(answer)
+            ))
 
+        # Add all answers at once
+        db.session.bulk_save_objects(answers_to_insert)
         db.session.commit()
-        return {"message": "Answers submitted successfully", "attempt_id": attempt.id}, 201
+
+        return {
+            "message": "Answers submitted successfully",
+            "attempt_id": attempt.id,
+            "answers_count": len(answers_to_insert)
+        }, 201
 
     @survey_ns.doc(
         summary="Fetch all answers for a survey",
@@ -238,6 +262,6 @@ class SurveyAnswersResource(Resource):
     def get(self, survey_id):
         """Fetch all answers for a survey"""
         answers = Answer.query.filter_by(survey_id=survey_id).all()
-        return [answer.to_dict() for answer in answers], 200
+        return answers_schema.dump(answers), 200
 
 

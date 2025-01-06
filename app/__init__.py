@@ -21,6 +21,7 @@ def create_app():
     if myapp.config['SWAGGER_SERVICE']:
         api = Api(myapp, version="1.0", title="Survey API",
           description="API documentation for the Survey project",
+          doc="/spars/swagger",
           security="BearerAuth",  # Default security scheme for the API
             authorizations={
                 "BearerAuth": {
@@ -31,26 +32,7 @@ def create_app():
                 }
             },)
 
-        from flask_swagger_ui import get_swaggerui_blueprint
-
-        SWAGGER_URL = '/spars/swagger'  # URL for exposing Swagger UI
-        API_URL = '/spars/swagger.json'  # Path to the API documentation in JSON format
-
-        swaggerui_blueprint = get_swaggerui_blueprint(
-            SWAGGER_URL,
-            API_URL,
-            config={'app_name': "Survey API"}
-        )
-
-        myapp.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
         
-        # Serve Swagger UI HTML from the 'static' directory
-        @myapp.route('/spars/swagger_ui')
-        def swagger_ui():
-            return send_from_directory(os.path.join(myapp.root_path, 'static'), 'swagger_ui.html')
-
-
-
     db.init_app(myapp)
     ma.init_app(myapp)
     migrate.init_app(myapp,db)
