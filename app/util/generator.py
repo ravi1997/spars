@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from flask import current_app
-import jwt
+from jwt import encode
+
 
 
 def generate_jwt_token(user):
@@ -14,5 +15,5 @@ def generate_jwt_token(user):
         'exp': expiration_time  # Expiration time
     }
     
-    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    token = encode(payload, SECRET_KEY, algorithm='HS256')
     return token

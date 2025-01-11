@@ -1,6 +1,7 @@
 from pprint import pprint
 from flask import current_app, request, jsonify
 from flask_restx import Resource, Namespace, fields
+from sqlalchemy.orm import joinedload
 import jwt
 from werkzeug.exceptions import Forbidden
 from app.decorator import token_required, verify_superadmin
@@ -259,9 +260,16 @@ class SurveyAnswersResource(Resource):
             200: 'List of answers'
         }
     )
-    def get(self, survey_id):
+    @token_required
+    def get(self,current_user, survey_id):
         """Fetch all answers for a survey"""
-        answers = Answer.query.filter_by(survey_id=survey_id).all()
+        answers = (
+            Answer.query
+                .join(SurveyAttempt, SurveyAttempt.id == Answer.attempt_id)
+                .filter(SurveyAttempt.user_id == current_user.id, SurveyAttempt.survey_id == survey_id)
+                .options(joinedload(Answer.question))  # Optional: Load related question data
+                .all()
+        )
         return answers_schema.dump(answers), 200
 
 

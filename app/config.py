@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 
 class Config:
     """Base configuration."""
+    load_dotenv('.env')
     SECRET_KEY = os.getenv('SECRET_KEY', 'your_default_secret_key')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'sqlite:///users.db')  # Default to SQLite
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -24,6 +26,12 @@ class Config:
     CDAC_SERVICE = True
 
     SWAGGER_SERVICE = True
+    OTP_SERVER = os.getenv('OTP_SERVER')
+    OTP_USERNAME = os.getenv('OTP_USERNAME')
+    OTP_PASSWORD = os.getenv('OTP_PASSWORD')
+    OTP_ID = os.getenv('OTP_ID')
+    OTP_SENDERID = os.getenv('OTP_SENDERID')
+
 
 
 class DevelopmentConfig(Config):

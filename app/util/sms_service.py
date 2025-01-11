@@ -22,7 +22,13 @@ def send_sms(mobile,message):
 	}
 
 	# URL of the service
-	url = app.config.get('OTP_SERVER')
+	url = app.config.get("OTP_SERVER")
+	app.logger.info(url)
+	app.logger.info(f'username : {app.config.get("OTP_USERNAME")}')
+	app.logger.info(f'password : {app.config.get("OTP_PASSWORD")}')
+	app.logger.info(f'senderid : {app.config.get("OTP_SENDERID")}')
+	app.logger.info(f'templateid1 : {app.config.get("OTP_ID")}')
+
 	# Send the POST request
 	response = requests.post(url, data=data, headers=headers)
 
@@ -37,7 +43,4 @@ def send_otp(mobile, otp_value):
     app.logger.info(msg)
     # If you want to use SMS, you can integrate with Twilio or any other SMS API
     # send_sms(user.mobile, otp_value)
-    if app.debug:
-        return 200
-    else:
-        return send_sms(mobile, msg)
+    return send_sms(mobile, msg)
