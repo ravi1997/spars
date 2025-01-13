@@ -30,7 +30,8 @@ def create_app():
                     "name": "Authorization",
                     "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer <your_token>'"
                 }
-            },)
+            },
+            )
 
         
     db.init_app(myapp)

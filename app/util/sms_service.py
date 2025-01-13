@@ -43,4 +43,5 @@ def send_otp(mobile, otp_value):
     app.logger.info(msg)
     # If you want to use SMS, you can integrate with Twilio or any other SMS API
     # send_sms(user.mobile, otp_value)
+    return 200
     return send_sms(mobile, msg)

@@ -163,6 +163,7 @@ class Answer(db.Model):
     answer_text = db.Column(db.Text, nullable=True)  # For text, number, date, etc.
     answer_file = db.Column(db.String(255), nullable=True)  # File/image path
     response_id = db.Column(db.Integer, db.ForeignKey('response.id'), nullable=True)  # Link to Response
+    selected_option_id= db.Column(db.Integer, db.ForeignKey('option.id'), nullable=True)
 
     question = db.relationship('Question', backref=db.backref('answers', cascade='all, delete-orphan'))
 

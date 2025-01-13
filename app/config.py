@@ -19,11 +19,17 @@ class Config:
     LOGGING = True
     REQUEST_LOGGING = True
     RESPONSE_LOGGING = True
+    ERROR_LOGGING = True
+
 
     SMS_SERVICE = True
     MAIL_SERVICE = True
     UHID_SERVICE = True
     CDAC_SERVICE = True
+
+    AUTHENTICATION_FLAG = True
+    
+
 
     SWAGGER_SERVICE = True
     OTP_SERVER = os.getenv('OTP_SERVER')

@@ -240,6 +240,7 @@ class SurveyAnswersResource(Resource):
                 question_id=question.id,
                 answer_text=answer_data.get('answer_text'),
                 answer_file=answer_data.get('answer_file'),
+                selected_option_id = answer_data.get('selected_option_id'),
                 attempt_id=attempt.id
             ))
 
